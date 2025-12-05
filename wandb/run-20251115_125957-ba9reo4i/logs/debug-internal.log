@@ -1,0 +1,18 @@
+{"time":"2025-11-15T13:00:04.4296929+05:30","level":"INFO","msg":"stream: starting","core version":"0.23.0"}
+{"time":"2025-11-15T13:00:07.7142302+05:30","level":"INFO","msg":"stream: created new stream","id":"ba9reo4i"}
+{"time":"2025-11-15T13:00:07.7148392+05:30","level":"INFO","msg":"handler: started","stream_id":"ba9reo4i"}
+{"time":"2025-11-15T13:00:07.7165438+05:30","level":"INFO","msg":"stream: started","id":"ba9reo4i"}
+{"time":"2025-11-15T13:00:07.7165438+05:30","level":"INFO","msg":"sender: started","stream_id":"ba9reo4i"}
+{"time":"2025-11-15T13:00:07.7165438+05:30","level":"INFO","msg":"writer: started","stream_id":"ba9reo4i"}
+{"time":"2025-11-15T13:29:31.5155027+05:30","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/rajvineet968-rv-college/pm25_airquality/ba9reo4i/file_stream\": dial tcp: lookup api.wandb.ai: no such host"}
+{"time":"2025-11-15T13:29:35.0581317+05:30","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/rajvineet968-rv-college/pm25_airquality/ba9reo4i/file_stream\": dial tcp: lookup api.wandb.ai: no such host"}
+{"time":"2025-11-15T13:29:39.12359+05:30","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/rajvineet968-rv-college/pm25_airquality/ba9reo4i/file_stream\": dial tcp: lookup api.wandb.ai: no such host"}
+{"time":"2025-11-15T13:29:48.3306448+05:30","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/rajvineet968-rv-college/pm25_airquality/ba9reo4i/file_stream\": dial tcp: lookup api.wandb.ai: no such host"}
+{"time":"2025-11-15T13:29:53.3613973+05:30","level":"ERROR","msg":"monitor: error sampling metrics: process does not exist"}
+{"time":"2025-11-15T13:30:05.7821908+05:30","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/rajvineet968-rv-college/pm25_airquality/ba9reo4i/file_stream\": dial tcp: lookup api.wandb.ai: no such host"}
+{"time":"2025-11-15T13:30:08.2559913+05:30","level":"ERROR","msg":"monitor: error sampling metrics: process does not exist"}
+{"time":"2025-11-15T13:30:23.2561007+05:30","level":"ERROR","msg":"monitor: error sampling metrics: process does not exist"}
+{"time":"2025-11-15T13:30:38.2353631+05:30","level":"INFO","msg":"api: retrying error","error":"Post \"https://api.wandb.ai/files/rajvineet968-rv-college/pm25_airquality/ba9reo4i/file_stream\": dial tcp: lookup api.wandb.ai: no such host"}
+{"time":"2025-11-15T13:30:38.2560878+05:30","level":"ERROR","msg":"monitor: error sampling metrics: process does not exist"}
+{"time":"2025-11-15T13:30:53.2559148+05:30","level":"ERROR","msg":"monitor: error sampling metrics: process does not exist"}
+{"time":"2025-11-15T13:31:08.2562406+05:30","level":"ERROR","msg":"monitor: error sampling metrics: process does not exist"}

@@ -1,0 +1,40 @@
+{
+  "os": "Windows-11-10.0.26220-SP0",
+  "python": "CPython 3.12.7",
+  "startedAt": "2025-11-15T07:29:57.919567Z",
+  "program": "c:\\Users\\Vineet Raj\\Desktop\\MLops\\train1.ipynb",
+  "codePath": "c:\\Users\\Vineet Raj\\Desktop\\MLops\\train1.ipynb",
+  "codePathLocal": "train1.ipynb",
+  "git": {
+    "remote": "https://github.com/rajvineet968/Prediction-Of-Air-pollutant-sources-in-Urban-area-MLOPS-.git",
+    "commit": "2a2c0550547251b4e607422f942744e78c394643"
+  },
+  "email": "rajvineet968@gmail.com",
+  "root": "c:\\Users\\Vineet Raj\\Desktop\\MLops",
+  "host": "LAPTOP-OS3QSE9C",
+  "executable": "d:\\anaconda3\\python.exe",
+  "cpu_count": 6,
+  "cpu_count_logical": 12,
+  "gpu": "NVIDIA GeForce GTX 1650",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "254721126400",
+      "used": "225460723712"
+    }
+  },
+  "memory": {
+    "total": "17042837504"
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA GeForce GTX 1650",
+      "memoryTotal": "4294967296",
+      "cudaCores": 896,
+      "architecture": "Turing",
+      "uuid": "GPU-da271120-4121-a36c-be68-4a154dbfdf0e"
+    }
+  ],
+  "cudaVersion": "13.0",
+  "writerId": "srwh10n1319werg2j4kqnolvyhhtlbeb"
+}

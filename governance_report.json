@@ -1,0 +1,8 @@
+{
+    "protected_attribute": "is_weekend",
+    "dataset_size": 12129252,
+    "PM25_median_threshold": 45.5,
+    "mean_difference": 0.007535994985295114,
+    "disparate_impact": 1.013303509747362,
+    "statistical_parity_difference": 0.007535994985295114
+}
