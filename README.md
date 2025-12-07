@@ -76,6 +76,13 @@ The project requires combining air quality data from cities and industrial sourc
    - Log results to Weights & Biases
    - Save the best performing model as `models/best_pm25_model.pkl`
 
+3. Combine Random Forest model chunks:
+   After training, run the combine script to merge the trained Random Forest chunks into a single ensemble model:
+   ```bash
+   python models/combine_joblib.py
+   ```
+   This creates `models/rf_reg.joblib` for further steps.
+
 **Note**: Ensure you have a Weights & Biases account and run `wandb login` before training.
 
 ### 4. Docker Deployment

@@ -1,3 +1,4 @@
 */data/kaggle_csvs
 */data/stations_csvs
 *venv
+*rf_reg.joblib
