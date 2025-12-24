@@ -2,3 +2,10 @@
 */data/stations_csvs
 *venv
 *rf_reg.joblib
+
+# DVC
+.dvc/
+.dvc/cache/
+
+# Local artifacts
+artifacts/
