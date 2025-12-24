@@ -1,0 +1,47 @@
+name: Deploy (Docker Compose via SSH)
+
+on:
+  workflow_run:
+    workflows: ["Docker Build and Push (GHCR)"]
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy (default: latest)'
+        required: false
+        default: 'latest'
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve image
+        id: vars
+        shell: bash
+        run: |
+          OWNER_LOWER=$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')
+          IMAGE="ghcr.io/${OWNER_LOWER}/mlops-project"
+          TAG="${{ inputs.image_tag || 'latest' }}"
+          echo "image=${IMAGE}:${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script_stop: true
+          script: |
+            set -e
+            echo "Logging in to GHCR..."
+            echo "${{ secrets.GHCR_PAT || secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+            cd "${{ secrets.DEPLOY_DIR }}"
+            echo "Pulling ${{ steps.vars.outputs.image }}..."
+            docker pull "${{ steps.vars.outputs.image }}"
+            # If your compose file references this image, pull updates and restart
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune -f

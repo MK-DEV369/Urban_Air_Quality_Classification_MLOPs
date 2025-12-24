@@ -5,3 +5,23 @@ data/
 *.csv
 *.ipynb_checkpoints/
 wandb
+
+# Editor/IDE
+.vscode/
+*.code-workspace
+
+# Environment files
+.env
+
+# Notebooks
+*.ipynb
+
+# Experiment profiles
+profiles/
+
+# Git
+.git
+
+# OS files
+.DS_Store
+Thumbs.db

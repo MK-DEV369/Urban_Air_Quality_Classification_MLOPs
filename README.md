@@ -202,3 +202,56 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 📞 Contact
 
 For questions or support, please open an issue in the repository.
+
+## CI/CD with GitHub Actions
+
+This repo includes ready‑to‑use GitHub Actions for CI, Docker image build/push, and optional deploy via Docker Compose over SSH.
+
+### Workflows
+- CI: runs on every push/PR. See [.github/workflows/ci.yml](.github/workflows/ci.yml)
+   - Sets up Python 3.10/3.11, installs `requirements.txt`
+   - Lints with `flake8`, compiles all `.py` files
+   - Runs `pytest` only if a `tests/` folder exists
+
+- Docker Build and Push (GHCR): runs on `main` and on demand. See [.github/workflows/docker-build.yml](.github/workflows/docker-build.yml)
+   - Builds the image from `Dockerfile`
+   - Pushes to GHCR: `ghcr.io/<owner>/mlops-project` with `latest`, branch, tag, and `sha` tags
+
+- Deploy via SSH (optional): runs after a successful image push or on demand. See [.github/workflows/deploy-compose.yml](.github/workflows/deploy-compose.yml)
+   - SSHes into your host, logs in to GHCR, and runs `docker compose pull` + `up -d`
+
+### Required repository settings/secrets
+Add these in GitHub → Settings → Secrets and variables → Actions → New repository secret:
+
+- GHCR_PAT: Personal Access Token with `read:packages` (used on the remote host to `docker login ghcr.io`)
+- SSH_HOST: Public hostname or IP of your server
+- SSH_USER: SSH username
+- SSH_PRIVATE_KEY: Private key for SSH (PEM text)
+- SSH_PORT: Optional; default `22`
+- DEPLOY_DIR: Absolute directory on the server where your `docker-compose.yml` lives
+
+No extra secret is required for pushing to GHCR from Actions; the workflow uses `${{ secrets.GITHUB_TOKEN }}` with `packages: write` permission.
+
+### Using the GHCR image in docker-compose
+Update your service to use the pushed image instead of building locally (example):
+
+```yaml
+services:
+   app:
+      image: ghcr.io/<owner>/mlops-project:latest
+      # remove "build:" if present and keep your env/ports/volumes as is
+      ports:
+         - "8000:8000"
+      env_file:
+         - .env
+```
+
+### Manual runs
+- CI: Actions → CI → Run workflow
+- Build/Push: Actions → Docker Build and Push (GHCR) → Run workflow
+- Deploy: Actions → Deploy (Docker Compose via SSH) → Run workflow (optionally specify `image_tag`)
+
+### Notes
+- The `.dockerignore` excludes large/local artifacts (e.g., `data/`, `wandb/`, notebooks). If your container needs local files, remove them from `.dockerignore`.
+- If your app loads models from `models/`, they are included by default.
+- If you add tests later, place them under `tests/` and CI will run them automatically.

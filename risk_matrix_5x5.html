@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5×5 Risk Assessment Matrix</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .matrix-wrapper {
+            overflow-x: auto;
+            margin-bottom: 40px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        
+        th, td {
+            border: 2px solid #e0e0e0;
+            padding: 16px;
+            text-align: center;
+            font-weight: 500;
+            font-size: 13px;
+        }
+        
+        th {
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        .row-header {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #333;
+            width: 120px;
+        }
+        
+        /* Risk color scale based on Probability × Impact */
+        .low {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .low-moderate {
+            background-color: #c3e6cb;
+            color: #155724;
+        }
+        
+        .moderate {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .moderate-high {
+            background-color: #ffe0b2;
+            color: #e65100;
+        }
+        
+        .high {
+            background-color: #ffcccc;
+            color: #c41c3b;
+        }
+        
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #e0e0e0;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            background: #f9f9f9;
+        }
+        
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        
+        .legend-label {
+            font-size: 13px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 16px;
+            border-radius: 6px;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #1565c0;
+            line-height: 1.6;
+        }
+        
+        .axis-label {
+            position: absolute;
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .matrix-label {
+            margin-bottom: 30px;
+        }
+        
+        .prob-label {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            font-weight: 600;
+            color: #666;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧠 5×5 Risk Assessment Matrix</h1>
+        <p class="subtitle">Probability × Impact | Urban Air Quality MLOps Project</p>
+        
+        <div class="matrix-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th colspan="2">Risk Level →</th>
+                        <th>Rare<br>(1)</th>
+                        <th>Unlikely<br>(2)</th>
+                        <th>Possible<br>(3)</th>
+                        <th>Probable<br>(4)</th>
+                        <th>Highly Probable<br>(5)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td rowspan="5" class="prob-label">Impact ↑</td>
+                        <td class="row-header">Very High (5)</td>
+                        <td class="moderate-high"><strong>5</strong><br>R6, R9</td>
+                        <td class="high"><strong>10</strong></td>
+                        <td class="high"><strong>15</strong></td>
+                        <td class="high"><strong>20</strong></td>
+                        <td class="high"><strong>25</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="row-header">High (4)</td>
+                        <td class="low-moderate"><strong>4</strong><br>R7</td>
+                        <td class="moderate"><strong>8</strong><br>R4</td>
+                        <td class="moderate"><strong>12</strong><br>R1, R2, R10</td>
+                        <td class="moderate-high"><strong>16</strong><br>R1, R8</td>
+                        <td class="high"><strong>20</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="row-header">Medium (3)</td>
+                        <td class="low"><strong>3</strong></td>
+                        <td class="low-moderate"><strong>6</strong><br>R5</td>
+                        <td class="moderate"><strong>9</strong><br>R3</td>
+                        <td class="moderate"><strong>12</strong></td>
+                        <td class="moderate-high"><strong>15</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="row-header">Low (2)</td>
+                        <td class="low"><strong>2</strong></td>
+                        <td class="low"><strong>4</strong></td>
+                        <td class="low-moderate"><strong>6</strong></td>
+                        <td class="low-moderate"><strong>8</strong></td>
+                        <td class="moderate"><strong>10</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="row-header">Very Low (1)</td>
+                        <td class="low"><strong>1</strong></td>
+                        <td class="low"><strong>2</strong></td>
+                        <td class="low"><strong>3</strong></td>
+                        <td class="low"><strong>4</strong></td>
+                        <td class="low-moderate"><strong>5</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color low"></div>
+                <span class="legend-label"><strong>Low Risk</strong> (1–3)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color low-moderate"></div>
+                <span class="legend-label"><strong>Low–Moderate</strong> (4–6)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color moderate"></div>
+                <span class="legend-label"><strong>Moderate</strong> (7–12)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color moderate-high"></div>
+                <span class="legend-label"><strong>Moderate–High</strong> (13–18)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color high"></div>
+                <span class="legend-label"><strong>High/Critical</strong> (19–25)</span>
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <strong>📊 Risk Score Calculation:</strong> Probability (1–5) × Impact (1–5) = Risk Score (1–25)
+            <br><br>
+            <strong>🎯 Project Risks Mapped:</strong>
+            <br>
+            • <strong>R1:</strong> Data quality (Probable × High = 12) — Major
+            <br>
+            • <strong>R2:</strong> Model drift (Possible × High = 9) — Moderate
+            <br>
+            • <strong>R3:</strong> Integration issues (Possible × Medium = 9) — Moderate
+            <br>
+            • <strong>R4:</strong> Reproducibility (Unlikely × High = 8) — Moderate
+            <br>
+            • <strong>R5:</strong> Deployment downtime (Possible × Medium = 6) — Moderate
+            <br>
+            • <strong>R6:</strong> Forecast misinterpretation (Unlikely × Very High = 10) — Major
+            <br>
+            • <strong>R7:</strong> Data loss (Rare × High = 4) — Low–Moderate
+            <br>
+            • <strong>R8:</strong> Poor generalization (Probable × Medium = 8) — Moderate
+            <br>
+            • <strong>R9:</strong> Legal/compliance (Rare × Very High = 5) — Low–Moderate
+            <br>
+            • <strong>R10:</strong> Monitoring failure (Possible × High = 12) — Major
+        </div>
+    </div>
+</body>
+</html>
