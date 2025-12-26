@@ -1,10 +1,10 @@
 
-*/data/kaggle_csvs
-*/data/stations_csvs
+data/kaggle_csvs/
+data/stations_csvs/
 data/cities_combined.csv
 data/stations_combined.csv
 data/raw_combined.csv
-*venv
+venv/
 
 # Model files - exclude these
 *.joblib
