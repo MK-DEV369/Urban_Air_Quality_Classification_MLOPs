@@ -1,0 +1,59 @@
+{
+    "timestamp": "2025-12-24T12:50:17.175079",
+    "reference_size": 9707201,
+    "current_size": 2426801,
+    "features": {
+        "PM10": {
+            "ks_test": {
+                "statistic": 0.06712368067985752,
+                "p_value": 0.0,
+                "drift_detected": true
+            },
+            "psi": {
+                "psi": 0.00799532530332802,
+                "drift_level": "none",
+                "drift_detected": false
+            },
+            "drift_detected": true
+        },
+        "O3": {
+            "ks_test": {
+                "statistic": 0.03865755736948168,
+                "p_value": 0.0,
+                "drift_detected": true
+            },
+            "psi": {
+                "psi": 0.00889441031836751,
+                "drift_level": "none",
+                "drift_detected": false
+            },
+            "drift_detected": true
+        },
+        "CO": {
+            "ks_test": {
+                "statistic": 0.021710533633512386,
+                "p_value": 0.0,
+                "drift_detected": true
+            },
+            "psi": {
+                "psi": 0.021993468120546707,
+                "drift_level": "none",
+                "drift_detected": false
+            },
+            "drift_detected": true
+        },
+        "PM2.5": {
+            "ks_test": {
+                "statistic": 0.04695248199745006,
+                "p_value": 0.0,
+                "drift_detected": true
+            },
+            "psi": {
+                "psi": 0.010319922210286136,
+                "drift_level": "none",
+                "drift_detected": false
+            },
+            "drift_detected": true
+        }
+    }
+}

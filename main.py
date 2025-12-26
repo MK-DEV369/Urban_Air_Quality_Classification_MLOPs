@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import numpy as np
 import joblib
 import time
+import logging
 
 # PROMETHEUS IMPORTS
 from prometheus_client import Counter, Histogram, generate_latest
@@ -46,6 +47,26 @@ app = FastAPI(
     description="Predict PM2.5 using trained ML model",
     version="1.0"
 )
+
+
+logger = logging.getLogger("audit")
+if not logger.handlers:
+    logging.basicConfig(level=logging.INFO)
+
+
+@app.middleware("http")
+async def audit_logging_middleware(request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    duration_ms = (time.time() - start_time) * 1000
+    logger.info(
+        "method=%s path=%s status=%s duration_ms=%.2f",
+        request.method,
+        request.url.path,
+        response.status_code,
+        duration_ms,
+    )
+    return response
 
 
 # ---------------------
@@ -98,6 +119,11 @@ def predict(input_data: AirQualityInput):
         "PM25_prediction": float(prediction),
         "model_used": type(model).__name__
     }
+
+
+@app.get("/metrics")
+def metrics():
+    return Response(generate_latest(), media_type="text/plain; version=0.0.4; charset=utf-8")
 
 
 # ---------------------

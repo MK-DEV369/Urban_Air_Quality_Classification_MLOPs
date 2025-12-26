@@ -1,8 +1,16 @@
 fastapi
 uvicorn
-numpy
+numpy<2.0
 pandas
 joblib
 scikit-learn
 xgboost
 prometheus-client
+comet-ml
+shap
+matplotlib
+seaborn
+plotly
+aif360
+scipy
+kfp==2.7.0

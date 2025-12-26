@@ -1,0 +1,652 @@
+# PIPELINE DEFINITION
+# Name: pm2-5-air-quality-prediction-pipeline
+# Description: End-to-end MLOps pipeline for PM2.5 prediction with XGBoost
+# Inputs:
+#    data_path: str [Default: 'data/kaggle_csvs']
+#    learning_rate: float [Default: 0.05]
+#    max_depth: int [Default: 7.0]
+#    n_estimators: int [Default: 300.0]
+#    test_size: float [Default: 0.2]
+# Outputs:
+#    drift-detection-component-metrics_output: system.Metrics
+#    evaluate-model-component-metrics_output: system.Metrics
+#    train-model-component-metrics: system.Metrics
+components:
+  comp-data-ingestion-component:
+    executorLabel: exec-data-ingestion-component
+    inputDefinitions:
+      parameters:
+        data_path:
+          defaultValue: data/kaggle_csvs
+          isOptional: true
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        output_data:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-data-preprocessing-component:
+    executorLabel: exec-data-preprocessing-component
+    inputDefinitions:
+      artifacts:
+        input_data:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+      parameters:
+        test_size:
+          defaultValue: 0.2
+          isOptional: true
+          parameterType: NUMBER_DOUBLE
+    outputDefinitions:
+      artifacts:
+        output_data:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-drift-detection-component:
+    executorLabel: exec-drift-detection-component
+    inputDefinitions:
+      artifacts:
+        input_data:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+      parameters:
+        test_size:
+          defaultValue: 0.2
+          isOptional: true
+          parameterType: NUMBER_DOUBLE
+    outputDefinitions:
+      artifacts:
+        metrics_output:
+          artifactType:
+            schemaTitle: system.Metrics
+            schemaVersion: 0.0.1
+  comp-evaluate-model-component:
+    executorLabel: exec-evaluate-model-component
+    inputDefinitions:
+      artifacts:
+        input_data:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        input_model:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+      parameters:
+        test_size:
+          defaultValue: 0.2
+          isOptional: true
+          parameterType: NUMBER_DOUBLE
+    outputDefinitions:
+      artifacts:
+        metrics_output:
+          artifactType:
+            schemaTitle: system.Metrics
+            schemaVersion: 0.0.1
+  comp-train-model-component:
+    executorLabel: exec-train-model-component
+    inputDefinitions:
+      artifacts:
+        input_data:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+      parameters:
+        learning_rate:
+          defaultValue: 0.05
+          isOptional: true
+          parameterType: NUMBER_DOUBLE
+        max_depth:
+          defaultValue: 7.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        n_estimators:
+          defaultValue: 300.0
+          isOptional: true
+          parameterType: NUMBER_INTEGER
+        test_size:
+          defaultValue: 0.2
+          isOptional: true
+          parameterType: NUMBER_DOUBLE
+    outputDefinitions:
+      artifacts:
+        metrics:
+          artifactType:
+            schemaTitle: system.Metrics
+            schemaVersion: 0.0.1
+        output_model:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+deploymentSpec:
+  executors:
+    exec-data-ingestion-component:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - data_ingestion_component
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'pandas>=2.0.0'\
+          \ 'numpy<2.0' 'pyarrow' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef data_ingestion_component(\n    output_data: Output[Dataset],\n\
+          \    data_path: str = \"data/kaggle_csvs\"\n):\n    \"\"\"Ingest and combine\
+          \ raw CSV files\"\"\"\n    import pandas as pd\n    import os\n    import\
+          \ glob\n    from datetime import datetime\n\n    start_time = datetime.now()\n\
+          \    print(f\"\\n{'='*80}\")\n    print(f\"\U0001F4E5 DATA INGESTION COMPONENT\
+          \ - Started at {start_time.strftime('%Y-%m-%d %H:%M:%S')}\")\n    print(f\"\
+          {'='*80}\")\n    print(f\"\U0001F50D Data path: {data_path}\")\n    print(f\"\
+          \U0001F50D Absolute path: {os.path.abspath(data_path) if os.path.exists(data_path)\
+          \ else 'PATH NOT FOUND'}\")\n\n    csv_files = glob.glob(os.path.join(data_path,\
+          \ \"*.csv\"))\n    print(f\"\\n\U0001F4CA Found {len(csv_files)} CSV files\
+          \ to process\")\n\n    if len(csv_files) == 0:\n        print(f\"\u26A0\uFE0F\
+          \  WARNING: No CSV files found in {data_path}\")\n        print(f\"   Please\
+          \ verify the data path is correct\")\n\n    dfs = []\n    failed_files =\
+          \ []\n\n    for i, file in enumerate(csv_files):\n        try:\n       \
+          \     df = pd.read_csv(file, low_memory=False)\n            dfs.append(df)\n\
+          \            if (i + 1) % 50 == 0:\n                print(f\"   \u2713 Processed\
+          \ {i + 1}/{len(csv_files)} files ({((i+1)/len(csv_files)*100):.1f}%)\")\n\
+          \        except Exception as e:\n            print(f\"   \u2717 Error reading\
+          \ {os.path.basename(file)}: {str(e)[:100]}\")\n            failed_files.append(os.path.basename(file))\n\
+          \n    print(f\"\\n\U0001F4C8 Processing Summary:\")\n    print(f\"   \u2713\
+          \ Successfully loaded: {len(dfs)} files\")\n    print(f\"   \u2717 Failed:\
+          \ {len(failed_files)} files\")\n    if failed_files:\n        print(f\"\
+          \   Failed files: {', '.join(failed_files[:5])}{'...' if len(failed_files)\
+          \ > 5 else ''}\")\n\n    combined_df = pd.concat(dfs, ignore_index=True)\n\
+          \    print(f\"\\n\u2705 Combined dataset: {len(combined_df):,} rows \xD7\
+          \ {len(combined_df.columns)} columns\")\n    print(f\"   Columns: {', '.join(combined_df.columns[:10])}{'...'\
+          \ if len(combined_df.columns) > 10 else ''}\")\n    print(f\"   Memory usage:\
+          \ {combined_df.memory_usage(deep=True).sum() / 1024**2:.2f} MB\")\n\n  \
+          \  # Save to output\n    combined_df.to_csv(output_data.path, index=False)\n\
+          \    end_time = datetime.now()\n    duration = (end_time - start_time).total_seconds()\n\
+          \    print(f\"\\n\U0001F4BE Data saved to: {output_data.path}\")\n    print(f\"\
+          \u23F1\uFE0F  Duration: {duration:.2f} seconds\")\n    print(f\"{'='*80}\\\
+          n\")\n\n"
+        image: python:3.10
+    exec-data-preprocessing-component:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - data_preprocessing_component
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'pandas>=2.0.0'\
+          \ 'numpy<2.0' 'scikit-learn' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef data_preprocessing_component(\n    input_data: Input[Dataset],\n\
+          \    output_data: Output[Dataset],\n    test_size: float = 0.2\n):\n   \
+          \ \"\"\"Clean and preprocess the data\"\"\"\n    import pandas as pd\n \
+          \   import numpy as np\n    from datetime import datetime\n\n    start_time\
+          \ = datetime.now()\n    print(f\"\\n{'='*80}\")\n    print(f\"\U0001F9F9\
+          \ DATA PREPROCESSING COMPONENT - Started at {start_time.strftime('%Y-%m-%d\
+          \ %H:%M:%S')}\")\n    print(f\"{'='*80}\")\n\n    # Load data\n    df =\
+          \ pd.read_csv(input_data.path, low_memory=False)\n    initial_rows = len(df)\n\
+          \    print(f\"\\n\U0001F4CA Initial dataset: {initial_rows:,} rows \xD7\
+          \ {len(df.columns)} columns\")\n    print(f\"   Columns: {list(df.columns)}\"\
+          )\n\n    # Parse timestamps\n    print(f\"\\n\u23F0 Parsing timestamps...\"\
+          )\n    df[\"Timestamp\"] = pd.to_datetime(df[\"Timestamp\"], errors=\"coerce\"\
+          )\n    invalid_timestamps = df[\"Timestamp\"].isna().sum()\n    print(f\"\
+          \   Invalid timestamps: {invalid_timestamps:,} ({invalid_timestamps/initial_rows*100:.2f}%)\"\
+          )\n    df.dropna(subset=[\"Timestamp\"], inplace=True)\n    print(f\"  \
+          \ Rows after timestamp cleaning: {len(df):,}\")\n\n    # Extract temporal\
+          \ features\n    print(f\"\\n\U0001F527 Extracting temporal features...\"\
+          )\n    df[\"hour\"] = df[\"Timestamp\"].dt.hour\n    df[\"dayofweek\"] =\
+          \ df[\"Timestamp\"].dt.dayofweek\n    df[\"month\"] = df[\"Timestamp\"].dt.month\n\
+          \    print(f\"   \u2713 Added features: hour, dayofweek, month\")\n\n  \
+          \  # Convert numeric columns\n    print(f\"\\n\U0001F522 Converting numeric\
+          \ columns...\")\n    numeric_cols = [\"PM2.5\", \"PM10\", \"O3\", \"CO\"\
+          ]\n    for col in numeric_cols:\n        before = df[col].isna().sum() if\
+          \ col in df.columns else len(df)\n        df[col] = pd.to_numeric(df[col],\
+          \ errors=\"coerce\")\n        after = df[col].isna().sum()\n        print(f\"\
+          \   {col}: {after:,} missing values ({after/len(df)*100:.2f}%)\")\n\n  \
+          \  # Remove rows with missing target\n    print(f\"\\n\U0001F3AF Handling\
+          \ target variable (PM2.5)...\")\n    before_target = len(df)\n    df.dropna(subset=[\"\
+          PM2.5\"], inplace=True)\n    removed = before_target - len(df)\n    print(f\"\
+          \   Removed {removed:,} rows with missing PM2.5 ({removed/before_target*100:.2f}%)\"\
+          )\n\n    # Fill missing features with median\n    print(f\"\\n\U0001F527\
+          \ Filling missing feature values with median...\")\n    features = [\"PM10\"\
+          , \"O3\", \"CO\", \"hour\", \"dayofweek\", \"month\"]\n    for feat in features:\n\
+          \        missing = df[feat].isna().sum()\n        if missing > 0:\n    \
+          \        median_val = df[feat].median()\n            print(f\"   {feat}:\
+          \ filling {missing:,} values with median {median_val:.2f}\")\n    df[features]\
+          \ = df[features].fillna(df[features].median())\n\n    # Keep only required\
+          \ columns\n    df = df[[\"PM2.5\"] + features]\n\n    # Data quality summary\n\
+          \    print(f\"\\n\U0001F4C8 Preprocessing Summary:\")\n    print(f\"   Initial\
+          \ rows: {initial_rows:,}\")\n    print(f\"   Final rows: {len(df):,}\")\n\
+          \    print(f\"   Data retained: {len(df)/initial_rows*100:.2f}%\")\n   \
+          \ print(f\"   PM2.5 range: [{df['PM2.5'].min():.2f}, {df['PM2.5'].max():.2f}]\"\
+          )\n    print(f\"   PM2.5 mean: {df['PM2.5'].mean():.2f} \xB5g/m\xB3\")\n\
+          \    print(f\"   Missing values: {df.isna().sum().sum()}\")\n\n    # Save\
+          \ processed data\n    df.to_csv(output_data.path, index=False)\n    end_time\
+          \ = datetime.now()\n    duration = (end_time - start_time).total_seconds()\n\
+          \    print(f\"\\n\U0001F4BE Preprocessed data saved to: {output_data.path}\"\
+          )\n    print(f\"\u23F1\uFE0F  Duration: {duration:.2f} seconds\")\n    print(f\"\
+          \u2705 Preprocessing complete!\")\n    print(f\"{'='*80}\\n\")\n\n"
+        image: python:3.10
+    exec-drift-detection-component:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - drift_detection_component
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'pandas>=2.0.0'\
+          \ 'numpy<2.0' 'scipy' 'scikit-learn' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef drift_detection_component(\n    input_data: Input[Dataset],\n\
+          \    metrics_output: Output[Metrics],\n    test_size: float = 0.2\n):\n\
+          \    \"\"\"Detect data drift using KS test and PSI\"\"\"\n    import pandas\
+          \ as pd\n    import numpy as np\n    from scipy.stats import ks_2samp\n\
+          \    from datetime import datetime\n    import json\n\n    start_time =\
+          \ datetime.now()\n    print(f\"\\n{'='*80}\")\n    print(f\"\U0001F50D DRIFT\
+          \ DETECTION COMPONENT - Started at {start_time.strftime('%Y-%m-%d %H:%M:%S')}\"\
+          )\n    print(f\"{'='*80}\")\n\n    # Load data\n    df = pd.read_csv(input_data.path)\n\
+          \    print(f\"\\n\U0001F4CA Dataset: {len(df):,} rows\")\n\n    # Split\
+          \ into reference (train) and current (test)\n    n = len(df)\n    split_idx\
+          \ = int(n * (1 - test_size))\n\n    reference_df = df.iloc[:split_idx]\n\
+          \    current_df = df.iloc[split_idx:]\n\n    print(f\"   Reference set (train):\
+          \ {len(reference_df):,} rows\")\n    print(f\"   Current set (test): {len(current_df):,}\
+          \ rows\")\n\n    features = [\"PM10\", \"O3\", \"CO\", \"hour\"]\n    drift_results\
+          \ = {}\n\n    print(f\"\\n\U0001F52C Performing Kolmogorov-Smirnov Tests\
+          \ (\u03B1=0.05):\")\n    print(f\"   Testing {len(features)} features for\
+          \ distribution drift...\\n\")\n\n    for feature in features:\n        #\
+          \ KS Test\n        ref_data = reference_df[feature].dropna()\n        curr_data\
+          \ = current_df[feature].dropna()\n\n        ks_stat, p_value = ks_2samp(ref_data,\
+          \ curr_data)\n\n        drift_detected = p_value < 0.05\n\n        drift_results[feature]\
+          \ = {\n            \"ks_statistic\": float(ks_stat),\n            \"p_value\"\
+          : float(p_value),\n            \"drift_detected\": bool(drift_detected),\n\
+          \            \"ref_mean\": float(ref_data.mean()),\n            \"curr_mean\"\
+          : float(curr_data.mean()),\n            \"mean_shift\": float(curr_data.mean()\
+          \ - ref_data.mean())\n        }\n\n        status = \"\u26A0\uFE0F DRIFT\"\
+          \ if drift_detected else \"\u2713 OK\"\n        print(f\"   [{status}] {feature:10s}:\
+          \ KS={ks_stat:.4f}, p={p_value:.4f}\")\n        print(f\"             Mean\
+          \ shift: {drift_results[feature]['ref_mean']:.2f} \u2192 {drift_results[feature]['curr_mean']:.2f}\
+          \ (\u0394{drift_results[feature]['mean_shift']:+.2f})\")\n\n    # Log overall\
+          \ drift status\n    total_drifted = sum(1 for r in drift_results.values()\
+          \ if r[\"drift_detected\"])\n    drift_percentage = (total_drifted / len(features))\
+          \ * 100\n\n    print(f\"\\n\U0001F4C8 Drift Summary:\")\n    print(f\" \
+          \  Features tested: {len(features)}\")\n    print(f\"   Features with drift:\
+          \ {total_drifted}\")\n    print(f\"   Drift percentage: {drift_percentage:.1f}%\"\
+          )\n\n    if total_drifted > 0:\n        print(f\"\\n\u26A0\uFE0F  WARNING:\
+          \ Drift detected in {total_drifted} feature(s)!\")\n        print(f\"  \
+          \ Consider retraining the model with recent data.\")\n    else:\n      \
+          \  print(f\"\\n\u2705 No significant drift detected. Model is stable.\"\
+          )\n\n    metrics_output.log_metric(\"drift_percentage\", float(drift_percentage))\n\
+          \    metrics_output.log_metric(\"features_drifted\", int(total_drifted))\n\
+          \    metrics_output.log_metric(\"features_tested\", len(features))\n\n \
+          \   end_time = datetime.now()\n    duration = (end_time - start_time).total_seconds()\n\
+          \    print(f\"\\n\u23F1\uFE0F  Duration: {duration:.2f} seconds\")\n   \
+          \ print(f\"{'='*80}\\n\")\n\n"
+        image: python:3.10
+    exec-evaluate-model-component:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - evaluate_model_component
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'pandas>=2.0.0'\
+          \ 'numpy<2.0' 'scikit-learn' 'joblib' 'matplotlib' 'seaborn' && \"$0\" \"\
+          $@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef evaluate_model_component(\n    input_data: Input[Dataset],\n\
+          \    input_model: Input[Model],\n    metrics_output: Output[Metrics],\n\
+          \    test_size: float = 0.2\n):\n    \"\"\"Evaluate model and generate plots\"\
+          \"\"\n    import pandas as pd\n    import numpy as np\n    import joblib\n\
+          \    from sklearn.metrics import mean_squared_error, mean_absolute_error,\
+          \ r2_score\n    from datetime import datetime\n    import matplotlib\n \
+          \   matplotlib.use('Agg')\n    import matplotlib.pyplot as plt\n    import\
+          \ seaborn as sns\n    import json\n\n    start_time = datetime.now()\n \
+          \   print(f\"\\n{'='*80}\")\n    print(f\"\U0001F4CA MODEL EVALUATION COMPONENT\
+          \ - Started at {start_time.strftime('%Y-%m-%d %H:%M:%S')}\")\n    print(f\"\
+          {'='*80}\")\n\n    # Load data and model\n    print(f\"\\n\U0001F4C2 Loading\
+          \ data and model...\")\n    df = pd.read_csv(input_data.path)\n    model\
+          \ = joblib.load(input_model.path)\n    print(f\"   \u2713 Data loaded: {len(df):,}\
+          \ rows\")\n    print(f\"   \u2713 Model loaded: {type(model).__name__}\"\
+          )\n\n    # Split data (same as training)\n    features = [\"PM10\", \"O3\"\
+          , \"CO\", \"hour\", \"dayofweek\", \"month\"]\n    n = len(df)\n    split_idx\
+          \ = int(n * (1 - test_size))\n    test_df = df.iloc[split_idx:]\n\n    X_test\
+          \ = test_df[features]\n    y_test = test_df[\"PM2.5\"]\n\n    print(f\"\\\
+          n\U0001F9EA Test Set: {len(X_test):,} samples\")\n\n    # Predict\n    print(f\"\
+          \\n\U0001F52E Generating predictions...\")\n    pred_start = datetime.now()\n\
+          \    y_pred = model.predict(X_test)\n    pred_duration = (datetime.now()\
+          \ - pred_start).total_seconds()\n    print(f\"   \u2713 Predictions completed\
+          \ in {pred_duration:.2f} seconds\")\n    print(f\"   Avg prediction time:\
+          \ {pred_duration/len(X_test)*1000:.2f} ms per sample\")\n\n    # Calculate\
+          \ metrics\n    print(f\"\\n\U0001F4C8 Computing evaluation metrics...\"\
+          )\n    rmse = mean_squared_error(y_test, y_pred) ** 0.5\n    mae = mean_absolute_error(y_test,\
+          \ y_pred)\n    r2 = r2_score(y_test, y_pred)\n    mape = np.mean(np.abs((y_test\
+          \ - y_pred) / y_test)) * 100\n\n    # Additional metrics\n    errors = y_test\
+          \ - y_pred\n    abs_errors = np.abs(errors)\n\n    print(f\"\\n\u2705 Evaluation\
+          \ Metrics:\")\n    print(f\"   RMSE: {rmse:.2f} \xB5g/m\xB3\")\n    print(f\"\
+          \   MAE: {mae:.2f} \xB5g/m\xB3\")\n    print(f\"   R\xB2: {r2:.4f}\")\n\
+          \    print(f\"   MAPE: {mape:.2f}%\")\n    print(f\"\\n\U0001F4CA Error\
+          \ Analysis:\")\n    print(f\"   Mean error: {errors.mean():.2f} \xB5g/m\xB3\
+          \")\n    print(f\"   Std error: {errors.std():.2f} \xB5g/m\xB3\")\n    print(f\"\
+          \   Max error: {abs_errors.max():.2f} \xB5g/m\xB3\")\n    print(f\"   90th\
+          \ percentile error: {np.percentile(abs_errors, 90):.2f} \xB5g/m\xB3\")\n\
+          \    print(f\"\\n\U0001F3AF Prediction Quality:\")\n    within_10 = (abs_errors\
+          \ <= 10).sum() / len(abs_errors) * 100\n    within_20 = (abs_errors <= 20).sum()\
+          \ / len(abs_errors) * 100\n    print(f\"   Within \xB110 \xB5g/m\xB3: {within_10:.1f}%\"\
+          )\n    print(f\"   Within \xB120 \xB5g/m\xB3: {within_20:.1f}%\")\n\n  \
+          \  # Log metrics\n    metrics_output.log_metric(\"rmse\", float(rmse))\n\
+          \    metrics_output.log_metric(\"mae\", float(mae))\n    metrics_output.log_metric(\"\
+          r2\", float(r2))\n    metrics_output.log_metric(\"mape\", float(mape))\n\
+          \    metrics_output.log_metric(\"within_10_pct\", float(within_10))\n  \
+          \  metrics_output.log_metric(\"within_20_pct\", float(within_20))\n\n  \
+          \  end_time = datetime.now()\n    duration = (end_time - start_time).total_seconds()\n\
+          \    print(f\"\\n\u23F1\uFE0F  Duration: {duration:.2f} seconds\")\n   \
+          \ print(f\"{'='*80}\\n\")\n\n"
+        image: python:3.10
+    exec-train-model-component:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - train_model_component
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'pandas>=2.0.0'\
+          \ 'numpy<2.0' 'scikit-learn' 'xgboost' 'joblib' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef train_model_component(\n    input_data: Input[Dataset],\n   \
+          \ output_model: Output[Model],\n    metrics: Output[Metrics],\n    test_size:\
+          \ float = 0.2,\n    n_estimators: int = 300,\n    learning_rate: float =\
+          \ 0.05,\n    max_depth: int = 7\n):\n    \"\"\"Train XGBoost model\"\"\"\
+          \n    import pandas as pd\n    import numpy as np\n    import xgboost as\
+          \ xgb\n    import joblib\n    from sklearn.metrics import mean_squared_error,\
+          \ mean_absolute_error, r2_score\n    from datetime import datetime\n   \
+          \ import json\n\n    start_time = datetime.now()\n    print(f\"\\n{'='*80}\"\
+          )\n    print(f\"\U0001F3AF MODEL TRAINING COMPONENT - Started at {start_time.strftime('%Y-%m-%d\
+          \ %H:%M:%S')}\")\n    print(f\"{'='*80}\")\n\n    # Load data\n    df =\
+          \ pd.read_csv(input_data.path)\n    print(f\"\\n\U0001F4CA Loaded dataset:\
+          \ {len(df):,} rows \xD7 {len(df.columns)} columns\")\n\n    # Split data\n\
+          \    features = [\"PM10\", \"O3\", \"CO\", \"hour\", \"dayofweek\", \"month\"\
+          ]\n    n = len(df)\n    split_idx = int(n * (1 - test_size))\n\n    train_df\
+          \ = df.iloc[:split_idx]\n    test_df = df.iloc[split_idx:]\n\n    X_train\
+          \ = train_df[features]\n    y_train = train_df[\"PM2.5\"]\n    X_test =\
+          \ test_df[features]\n    y_test = test_df[\"PM2.5\"]\n\n    print(f\"\\\
+          n\U0001F4C8 Data Split (test_size={test_size}):\")\n    print(f\"   Training\
+          \ set: {len(X_train):,} samples ({len(X_train)/n*100:.1f}%)\")\n    print(f\"\
+          \   Test set: {len(X_test):,} samples ({len(X_test)/n*100:.1f}%)\")\n  \
+          \  print(f\"   Features: {len(features)}\")\n    print(f\"\\n\U0001F3AF\
+          \ Target Statistics:\")\n    print(f\"   Train - mean: {y_train.mean():.2f},\
+          \ std: {y_train.std():.2f}, range: [{y_train.min():.2f}, {y_train.max():.2f}]\"\
+          )\n    print(f\"   Test - mean: {y_test.mean():.2f}, std: {y_test.std():.2f},\
+          \ range: [{y_test.min():.2f}, {y_test.max():.2f}]\")\n\n    # Train XGBoost\n\
+          \    print(f\"\\n\U0001F916 XGBoost Model Configuration:\")\n    print(f\"\
+          \   n_estimators: {n_estimators}\")\n    print(f\"   learning_rate: {learning_rate}\"\
+          )\n    print(f\"   max_depth: {max_depth}\")\n    print(f\"   subsample:\
+          \ 0.9\")\n    print(f\"   colsample_bytree: 0.9\")\n    print(f\"   tree_method:\
+          \ hist\")\n    print(f\"   device: cpu\")\n\n    model = xgb.XGBRegressor(\n\
+          \        n_estimators=n_estimators,\n        learning_rate=learning_rate,\n\
+          \        max_depth=max_depth,\n        subsample=0.9,\n        colsample_bytree=0.9,\n\
+          \        device=\"cpu\",\n        tree_method=\"hist\",\n        objective=\"\
+          reg:squarederror\",\n        random_state=42\n    )\n\n    print(f\"\\n\U0001F504\
+          \ Training model...\")\n    train_start = datetime.now()\n    model.fit(X_train,\
+          \ y_train, verbose=False)\n    train_duration = (datetime.now() - train_start).total_seconds()\n\
+          \    print(f\"   \u2713 Training completed in {train_duration:.2f} seconds\"\
+          )\n\n    # Evaluate\n    print(f\"\\n\U0001F4CA Evaluating model...\")\n\
+          \    y_pred = model.predict(X_test)\n    rmse = mean_squared_error(y_test,\
+          \ y_pred) ** 0.5\n    mae = mean_absolute_error(y_test, y_pred)\n    r2\
+          \ = r2_score(y_test, y_pred)\n    mape = np.mean(np.abs((y_test - y_pred)\
+          \ / y_test)) * 100\n\n    print(f\"\\n\u2705 Model Performance Metrics:\"\
+          )\n    print(f\"   RMSE: {rmse:.2f} \xB5g/m\xB3\")\n    print(f\"   MAE:\
+          \ {mae:.2f} \xB5g/m\xB3\")\n    print(f\"   R\xB2: {r2:.4f}\")\n    print(f\"\
+          \   MAPE: {mape:.2f}%\")\n    print(f\"   Max prediction error: {np.abs(y_test\
+          \ - y_pred).max():.2f} \xB5g/m\xB3\")\n\n    # Feature importance\n    print(f\"\
+          \\n\U0001F50D Top 3 Feature Importances:\")\n    feature_importance = pd.DataFrame({\n\
+          \        'feature': features,\n        'importance': model.feature_importances_\n\
+          \    }).sort_values('importance', ascending=False)\n    for idx, row in\
+          \ feature_importance.head(3).iterrows():\n        print(f\"   {row['feature']}:\
+          \ {row['importance']:.4f}\")\n\n    # Save model\n    joblib.dump(model,\
+          \ output_model.path)\n    end_time = datetime.now()\n    duration = (end_time\
+          \ - start_time).total_seconds()\n    print(f\"\\n\U0001F4BE Model saved\
+          \ to: {output_model.path}\")\n    print(f\"\u23F1\uFE0F  Total duration:\
+          \ {duration:.2f} seconds\")\n    print(f\"{'='*80}\\n\")\n\n    # Log metrics\n\
+          \    metrics.log_metric(\"rmse\", rmse)\n    metrics.log_metric(\"mae\"\
+          , mae)\n    metrics.log_metric(\"r2\", r2)\n    metrics.log_metric(\"mape\"\
+          , mape)\n    metrics.log_metric(\"test_samples\", len(X_test))\n    metrics.log_metric(\"\
+          train_duration_sec\", train_duration)\n\n"
+        image: python:3.10
+pipelineInfo:
+  description: End-to-end MLOps pipeline for PM2.5 prediction with XGBoost
+  name: pm2-5-air-quality-prediction-pipeline
+root:
+  dag:
+    outputs:
+      artifacts:
+        drift-detection-component-metrics_output:
+          artifactSelectors:
+          - outputArtifactKey: metrics_output
+            producerSubtask: drift-detection-component
+        evaluate-model-component-metrics_output:
+          artifactSelectors:
+          - outputArtifactKey: metrics_output
+            producerSubtask: evaluate-model-component
+        train-model-component-metrics:
+          artifactSelectors:
+          - outputArtifactKey: metrics
+            producerSubtask: train-model-component
+    tasks:
+      data-ingestion-component:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-data-ingestion-component
+        inputs:
+          parameters:
+            data_path:
+              componentInputParameter: data_path
+        taskInfo:
+          name: data-ingestion-component
+      data-preprocessing-component:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-data-preprocessing-component
+        dependentTasks:
+        - data-ingestion-component
+        inputs:
+          artifacts:
+            input_data:
+              taskOutputArtifact:
+                outputArtifactKey: output_data
+                producerTask: data-ingestion-component
+          parameters:
+            test_size:
+              componentInputParameter: test_size
+        taskInfo:
+          name: data-preprocessing-component
+      drift-detection-component:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-drift-detection-component
+        dependentTasks:
+        - data-preprocessing-component
+        inputs:
+          artifacts:
+            input_data:
+              taskOutputArtifact:
+                outputArtifactKey: output_data
+                producerTask: data-preprocessing-component
+          parameters:
+            test_size:
+              componentInputParameter: test_size
+        taskInfo:
+          name: drift-detection-component
+      evaluate-model-component:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-evaluate-model-component
+        dependentTasks:
+        - data-preprocessing-component
+        - train-model-component
+        inputs:
+          artifacts:
+            input_data:
+              taskOutputArtifact:
+                outputArtifactKey: output_data
+                producerTask: data-preprocessing-component
+            input_model:
+              taskOutputArtifact:
+                outputArtifactKey: output_model
+                producerTask: train-model-component
+          parameters:
+            test_size:
+              componentInputParameter: test_size
+        taskInfo:
+          name: evaluate-model-component
+      train-model-component:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-train-model-component
+        dependentTasks:
+        - data-preprocessing-component
+        inputs:
+          artifacts:
+            input_data:
+              taskOutputArtifact:
+                outputArtifactKey: output_data
+                producerTask: data-preprocessing-component
+          parameters:
+            learning_rate:
+              componentInputParameter: learning_rate
+            max_depth:
+              componentInputParameter: max_depth
+            n_estimators:
+              componentInputParameter: n_estimators
+            test_size:
+              componentInputParameter: test_size
+        taskInfo:
+          name: train-model-component
+  inputDefinitions:
+    parameters:
+      data_path:
+        defaultValue: data/kaggle_csvs
+        isOptional: true
+        parameterType: STRING
+      learning_rate:
+        defaultValue: 0.05
+        isOptional: true
+        parameterType: NUMBER_DOUBLE
+      max_depth:
+        defaultValue: 7.0
+        isOptional: true
+        parameterType: NUMBER_INTEGER
+      n_estimators:
+        defaultValue: 300.0
+        isOptional: true
+        parameterType: NUMBER_INTEGER
+      test_size:
+        defaultValue: 0.2
+        isOptional: true
+        parameterType: NUMBER_DOUBLE
+  outputDefinitions:
+    artifacts:
+      drift-detection-component-metrics_output:
+        artifactType:
+          schemaTitle: system.Metrics
+          schemaVersion: 0.0.1
+      evaluate-model-component-metrics_output:
+        artifactType:
+          schemaTitle: system.Metrics
+          schemaVersion: 0.0.1
+      train-model-component-metrics:
+        artifactType:
+          schemaTitle: system.Metrics
+          schemaVersion: 0.0.1
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.7.0

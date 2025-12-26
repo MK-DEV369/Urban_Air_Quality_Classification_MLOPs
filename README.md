@@ -6,11 +6,13 @@ An end-to-end MLOps project for predicting urban air quality (PM2.5 levels) usin
 
 - **Data Pipeline**: Automated data cleaning and preprocessing combining multiple air quality datasets
 - **Machine Learning Models**: Comparative training of Linear Regression, Random Forest, and XGBoost models
+- **Kubeflow Pipeline Orchestration**: Complete ML workflow orchestration using Kubeflow Pipelines
 - **FastAPI Deployment**: RESTful API for real-time PM2.5 predictions
-- **Monitoring & Observability**: Prometheus metrics integration for API performance tracking
+- **Monitoring & Observability**: Prometheus metrics + Grafana dashboard for API performance tracking
 - **Experiment Tracking**: Weights & Biases integration for model versioning and logging
 - **Model Governance**: Fairness and bias analysis using AIF360
 - **Containerized Deployment**: Docker-based setup for easy deployment
+- **CI/CD**: GitHub Actions workflows for CI + Docker build/push and optional deploy
 
 ## 📋 Prerequisites
 
@@ -35,6 +37,7 @@ An end-to-end MLOps project for predicting urban air quality (PM2.5 levels) usin
 - Docker
 - Weights & Biases CLI
 - Jupyter Notebook (for data processing)
+- Kubeflow Pipelines SDK (for pipeline orchestration)
 
 ## 📦 Installation & Setup
 
@@ -85,7 +88,34 @@ The project requires combining air quality data from cities and industrial sourc
 
 **Note**: Ensure you have a Weights & Biases account and run `wandb login` before training.
 
-### 4. Docker Deployment
+### 4. Kubeflow Pipeline Orchestration (Optional)
+
+For production-scale ML workflow orchestration:
+
+1. Install Kubeflow Pipelines SDK:
+   ```bash
+   pip install kfp==2.7.0
+   ```
+
+2. Compile the pipeline:
+   ```bash
+   python kubeflow_pipeline.py
+   ```
+   This generates `pm25_pipeline.yaml` with 5 components:
+   - Data Ingestion
+   - Data Preprocessing
+   - Model Training (XGBoost)
+   - Model Evaluation
+   - Drift Detection
+
+3. Deploy to Kubeflow (requires Kubeflow installation):
+   ```bash
+   python kubeflow_deploy.py --host http://localhost:8080
+   ```
+
+See [KUBEFLOW_QUICKSTART.md](KUBEFLOW_QUICKSTART.md) for detailed instructions.
+
+### 5. Docker Deployment
 
 1. Build and start the services:
    ```bash
@@ -96,6 +126,7 @@ The project requires combining air quality data from cities and industrial sourc
    - **FastAPI Application**: http://localhost:8000
    - **API Documentation**: http://localhost:8000/docs
    - **Prometheus Monitoring**: http://localhost:9090
+   - **Grafana Dashboards**: http://localhost:3000 (datasource + dashboard auto-provisioned)
 
 ## 🔧 Usage
 
@@ -135,6 +166,11 @@ GET /metrics
 ```
 Returns Prometheus-formatted metrics for monitoring.
 
+#### Grafana Dashboard
+- Open Grafana: http://localhost:3000
+- Default login (Grafana defaults): `admin` / `admin` (you’ll be prompted to change it)
+- Dashboard: **FastAPI MLOps (PM2.5) - Overview**
+
 ### Monitoring Dashboard
 
 - **Prometheus**: Access at http://localhost:9090 to view API metrics
@@ -158,9 +194,17 @@ Returns Prometheus-formatted metrics for monitoring.
 - Governance report with fairness analysis (`governance_report.json`)
 
 ### Monitoring & Observability
-- Prometheus metrics for API health and performance
+- Prometheus metrics for API health and performance (`/metrics`)
+- Grafana dashboard provisioned from `grafana/`
 - Experiment tracking with model versioning
 - Bias and fairness assessment using AIF360
+
+### Model Documentation
+- Model Card template: `MODEL_CARD.md`
+
+### Drift Detection (Optional)
+- Evidently drift report scaffold: `monitoring/evidently_drift_report.py`
+- Optional scheduled workflow: `.github/workflows/drift-report.yml` (uploads HTML report artifact)
 
 ## 🏗️ Project Structure
 
@@ -187,6 +231,29 @@ MLOPs_Project/
 └── README.md
 ```
 
+## What features are still NOT utilized (future work)
+
+These are common MLOps features not fully implemented in this repo yet:
+
+- **Formal data versioning (DVC)**: data is stored in `data/` without DVC tracking/remotes
+- **Model registry (formal)**: models are stored locally / W&B artifacts (no dedicated registry like MLflow Registry)
+- **Automated retraining pipeline**: training is notebook-driven (no scheduled retrain + promotion)
+- **ML performance monitoring in production**: operational metrics exist, but no continuous ground-truth monitoring
+
+## Viva/Exam-ready tool status (updated)
+
+| MLOps Layer         | Tools Used                         | Status     |
+| ------------------- | ---------------------------------- | ---------- |
+| Data Processing     | Pandas, NumPy                      | ✅ Complete |
+| Feature Engineering | Manual (time features)             | ✅ Complete |
+| Model Training      | Scikit-learn, XGBoost              | ✅ Complete |
+| Experiment Tracking | Weights & Biases                   | ✅ Complete |
+| Deployment          | FastAPI, Docker, Docker Compose    | ✅ Complete |
+| Monitoring          | Prometheus + Grafana               | ✅ Complete |
+| Governance          | AIF360                              | ⚠ Partial  |
+| CI/CD               | GitHub Actions                     | ✅ Complete |
+| Drift Detection     | EvidentlyAI (scaffold + workflow)  | ⚠ Partial  |
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -212,6 +279,10 @@ This repo includes ready‑to‑use GitHub Actions for CI, Docker image build/pu
    - Sets up Python 3.10/3.11, installs `requirements.txt`
    - Lints with `flake8`, compiles all `.py` files
    - Runs `pytest` only if a `tests/` folder exists
+
+- Train/Evaluate (manual/scheduled): runs evaluation + interpretability and uploads artifacts. See [.github/workflows/train-evaluate.yml](.github/workflows/train-evaluate.yml)
+   - If `data/master_airquality_clean.csv` is not in the repo, provide a `data_url` input when manually triggering
+   - Uploads `artifacts/` (metrics JSON + test predictions + feature importance)
 
 - Docker Build and Push (GHCR): runs on `main` and on demand. See [.github/workflows/docker-build.yml](.github/workflows/docker-build.yml)
    - Builds the image from `Dockerfile`
@@ -255,3 +326,24 @@ services:
 - The `.dockerignore` excludes large/local artifacts (e.g., `data/`, `wandb/`, notebooks). If your container needs local files, remove them from `.dockerignore`.
 - If your app loads models from `models/`, they are included by default.
 - If you add tests later, place them under `tests/` and CI will run them automatically.
+
+## Report Deliverables (Rubric Support)
+
+- Risk matrix explanation: [docs/risk_matrix.md](docs/risk_matrix.md)
+- Dataset references & licensing: [docs/dataset_references.md](docs/dataset_references.md)
+- Data Card: [DATA_CARD.md](DATA_CARD.md)
+- Retraining plan: [docs/retraining_plan.md](docs/retraining_plan.md)
+- Audit checklist: [AUDIT_CHECKLIST.md](AUDIT_CHECKLIST.md)
+- DVC setup guide: [docs/dvc_setup.md](docs/dvc_setup.md)
+- Model registry approach: [docs/model_registry.md](docs/model_registry.md)
+
+### Local evaluation / interpretability
+
+```bash
+python scripts/evaluate_model.py --data data/master_airquality_clean.csv --model models/best_pm25_model.pkl --outdir artifacts
+python scripts/interpretability.py --model models/best_pm25_model.pkl --outdir artifacts
+```
+
+### Alerting
+- Prometheus rules: `prometheus/alert_rules.yml`
+- Alertmanager: exposed at http://localhost:9093 when using docker compose

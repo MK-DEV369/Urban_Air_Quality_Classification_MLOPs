@@ -3,9 +3,18 @@
 *venv
 *rf_reg.joblib
 
+# Large files - use DVC for versioning these
+*.joblib
+*.pkl
+*.csv
+data/
+models/
+artifacts/
+
 # DVC
 .dvc/
 .dvc/cache/
 
 # Local artifacts
-artifacts/
+wandb/
+__pycache__/

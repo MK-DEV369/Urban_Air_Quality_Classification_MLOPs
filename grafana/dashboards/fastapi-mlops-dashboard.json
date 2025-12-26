@@ -1,0 +1,86 @@
+{
+  "uid": "fastapi-mlops",
+  "title": "FastAPI MLOps (PM2.5) - Overview",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "tags": ["mlops", "fastapi", "prometheus"],
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Requests / sec (all)",
+      "gridPos": {"x": 0, "y": 0, "w": 8, "h": 5},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(api_requests_total[1m]))"
+        }
+      ],
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"], "values": false}
+      }
+    },
+    {
+      "type": "stat",
+      "title": "Predictions / sec",
+      "gridPos": {"x": 8, "y": 0, "w": 8, "h": 5},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(predictions_total[1m]))"
+        }
+      ],
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"], "values": false}
+      }
+    },
+    {
+      "type": "stat",
+      "title": "p95 Latency (ms)",
+      "gridPos": {"x": 16, "y": 0, "w": 8, "h": 5},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum(rate(request_latency_seconds_bucket[5m])) by (le)) * 1000"
+        }
+      ],
+      "options": {
+        "reduceOptions": {"calcs": ["lastNotNull"], "values": false}
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Request rate by endpoint",
+      "gridPos": {"x": 0, "y": 5, "w": 24, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(api_requests_total[1m])) by (endpoint)"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Latency (p50/p95/p99) ms",
+      "gridPos": {"x": 0, "y": 13, "w": 24, "h": 8},
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum(rate(request_latency_seconds_bucket[5m])) by (le)) * 1000"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum(rate(request_latency_seconds_bucket[5m])) by (le)) * 1000"
+        },
+        {
+          "refId": "C",
+          "expr": "histogram_quantile(0.99, sum(rate(request_latency_seconds_bucket[5m])) by (le)) * 1000"
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": []
+  }
+}
