@@ -1,1 +1,2 @@
-# Don't track large files with LFS - use DVC instead
+# Only track the master dataset with LFS
+data/master_airquality_clean.csv filter=lfs diff=lfs merge=lfs -text

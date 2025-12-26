@@ -1,14 +1,17 @@
+
 */data/kaggle_csvs
 */data/stations_csvs
+data/cities_combined.csv
+data/stations_combined.csv
+data/raw_combined.csv
 *venv
-*rf_reg.joblib
 
-# Large files - use DVC for versioning these
+# Model files - exclude these
 *.joblib
 *.pkl
-*.csv
-data/
 models/
+
+# Artifacts
 artifacts/
 
 # DVC
