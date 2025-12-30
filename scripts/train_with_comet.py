@@ -2,7 +2,7 @@
 """
 Training script with Comet ML tracking and model versioning.
 """
-
+from comet_ml import Experiment
 import os
 import pandas as pd
 import numpy as np
@@ -11,13 +11,16 @@ import xgboost as xgb
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-from comet_ml import Experiment
 
-
-def load_and_prepare_data(data_path="data/master_airquality_clean.csv"):
-    """Load and prepare dataset."""
+def load_and_prepare_data(data_path="data/master_airquality_clean.csv", sample_size=None, random_state=42):
+    """Load and prepare dataset, with optional downsampling for speed."""
     print("📥 Loading dataset...")
     df = pd.read_csv(data_path, low_memory=False)
+
+    # Optional downsampling to prevent very long training runs on huge datasets
+    if sample_size is not None and len(df) > sample_size:
+        df = df.sample(n=sample_size, random_state=random_state)
+        print(f"⚡ Downsampled to {len(df)} rows for faster training")
     
     df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
     df.dropna(subset=["Timestamp"], inplace=True)
@@ -89,6 +92,14 @@ def train_and_log_model(model, model_name, X_train, y_train, X_test, y_test, exp
 
 
 def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Train models with Comet ML tracking")
+    parser.add_argument("--sample-size", type=int, default=200_000, help="Rows to sample for faster training (None for full dataset)")
+    parser.add_argument("--rf-trees", type=int, default=75, help="RandomForest n_estimators")
+    parser.add_argument("--rf-depth", type=int, default=16, help="RandomForest max_depth")
+    args = parser.parse_args()
+
     # Initialize Comet ML experiment
     # API key can be set via COMET_API_KEY environment variable
     experiment = Experiment(
@@ -99,8 +110,8 @@ def main():
         log_code=True
     )
     
-    # Load data
-    df, features = load_and_prepare_data()
+    # Load data (downsample if needed to avoid long RF training)
+    df, features = load_and_prepare_data(sample_size=args.sample_size)
     X_train, X_test, y_train, y_test = create_splits(df, features)
     
     print(f"📊 Dataset: Train={len(X_train)}, Test={len(X_test)}")
@@ -115,8 +126,9 @@ def main():
     models = {
         "LinearRegression": LinearRegression(),
         "RandomForest": RandomForestRegressor(
-            n_estimators=100,
-            max_depth=20,
+            n_estimators=args.rf_trees,
+            max_depth=args.rf_depth,
+            max_samples=0.5,
             n_jobs=-1,
             random_state=42
         ),

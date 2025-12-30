@@ -1,0 +1,65 @@
+# Python virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# Large data directories
+data/
+dvc_storage/
+wandb/
+artifacts/
+
+# Model files (too large for CI container)
+models/*.joblib
+models/*.json
+models/chunk_*.joblib
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Git
+.git/
+.gitignore
+
+# Docker
+.dockerignore
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Monitoring/logs
+monitoring/reports/
+grafana/
+prometheus/
+*.log
+
+# Large misc files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.gz
+
+# Build outputs
+build/
+dist/
+*.egg-info/

@@ -1,0 +1,76 @@
+{
+    "timestamp": "2025-12-28T15:36:47.939277",
+    "reference_size": 9707201,
+    "current_size": 2426801,
+    "ensemble_method": "voting (KS + PSI)",
+    "features": {
+        "PM10": {
+            "ks_test": {
+                "statistic": 0.0747,
+                "p_value": 1.1107942753711278e-24,
+                "threshold": 0.1,
+                "drift_detected": false,
+                "interpretation": "negligible"
+            },
+            "psi": {
+                "psi": 0.00799532530332802,
+                "drift_level": "none",
+                "drift_detected": false,
+                "severity": 4
+            },
+            "drift_detected": false,
+            "consensus": "disagreement"
+        },
+        "O3": {
+            "ks_test": {
+                "statistic": 0.0379,
+                "p_value": 1.1523872600898962e-06,
+                "threshold": 0.1,
+                "drift_detected": false,
+                "interpretation": "negligible"
+            },
+            "psi": {
+                "psi": 0.00889441031836751,
+                "drift_level": "none",
+                "drift_detected": false,
+                "severity": 4
+            },
+            "drift_detected": false,
+            "consensus": "disagreement"
+        },
+        "CO": {
+            "ks_test": {
+                "statistic": 0.0216,
+                "p_value": 0.018824742428484434,
+                "threshold": 0.1,
+                "drift_detected": false,
+                "interpretation": "negligible"
+            },
+            "psi": {
+                "psi": 0.021993468120546707,
+                "drift_level": "none",
+                "drift_detected": false,
+                "severity": 4
+            },
+            "drift_detected": false,
+            "consensus": "disagreement"
+        },
+        "PM2.5": {
+            "ks_test": {
+                "statistic": 0.0578,
+                "p_value": 6.089523363124891e-15,
+                "threshold": 0.1,
+                "drift_detected": false,
+                "interpretation": "negligible"
+            },
+            "psi": {
+                "psi": 0.010319922210286136,
+                "drift_level": "none",
+                "drift_detected": false,
+                "severity": 4
+            },
+            "drift_detected": false,
+            "consensus": "disagreement"
+        }
+    }
+}

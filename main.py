@@ -4,6 +4,7 @@ import numpy as np
 import joblib
 import time
 import logging
+import os
 
 # PROMETHEUS IMPORTS
 from prometheus_client import Counter, Histogram, generate_latest
@@ -13,7 +14,14 @@ from starlette.responses import Response
 # ---------------------
 # LOAD MODEL
 # ---------------------
-model = joblib.load("models/best_pm25_model.pkl")
+model_path = "models/best_pm25_model.pkl"
+if not os.path.exists(model_path):
+    print(f"⚠️  Warning: Model file not found at {model_path}")
+    print("   Run: python scripts/train_with_comet.py")
+    model = None
+else:
+    model = joblib.load(model_path)
+    print(f"✅ Model loaded from {model_path}")
 
 
 # ---------------------
@@ -37,6 +45,11 @@ LATENCY = Histogram(
     "Latency of prediction endpoint"
 )
 
+UP = Counter(
+    "up",
+    "Service health (1 = up)"
+)
+
 
 # ---------------------
 # FASTAPI APP
@@ -52,6 +65,15 @@ app = FastAPI(
 logger = logging.getLogger("audit")
 if not logger.handlers:
     logging.basicConfig(level=logging.INFO)
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Log startup."""
+    print("🚀 FastAPI server starting on http://0.0.0.0:8000")
+    print("📊 Metrics available at http://0.0.0.0:8000/metrics")
+    print("📝 API docs at http://0.0.0.0:8000/docs")
+    UP.inc()
 
 
 @app.middleware("http")
@@ -92,11 +114,28 @@ def home():
     return {"message": "PM2.5 Prediction API is running!"}
 
 
+@app.get("/health")
+def health():
+    """Health check endpoint."""
+    REQUEST_COUNT.labels("GET", "/health").inc()
+    status = "healthy" if model is not None else "degraded"
+    return {
+        "status": status,
+        "model_loaded": model is not None
+    }
+
+
 @app.post("/predict")
 def predict(input_data: AirQualityInput):
-
+    """Predict PM2.5 levels."""
     REQUEST_COUNT.labels("POST", "/predict").inc()
     start_time = time.time()
+
+    if model is None:
+        return {
+            "error": "Model not loaded. Train model first: python scripts/train_with_comet.py",
+            "status": "unavailable"
+        }, 503
 
     # Prepare features
     features = np.array([[
@@ -123,13 +162,6 @@ def predict(input_data: AirQualityInput):
 
 @app.get("/metrics")
 def metrics():
+    """Prometheus metrics endpoint."""
     return Response(generate_latest(), media_type="text/plain; version=0.0.4; charset=utf-8")
 
-
-# ---------------------
-# PROMETHEUS ENDPOINT
-# ---------------------
-
-@app.get("/metrics")
-def metrics():
-    return Response(generate_latest(), media_type="text/plain")

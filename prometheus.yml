@@ -1,13 +1,52 @@
 global:
-  scrape_interval: 5s
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
 
 rule_files:
   - /etc/prometheus/alert_rules.yml
 
 scrape_configs:
+  # FastAPI application metrics
   - job_name: "fastapi"
+    metrics_path: /metrics
     static_configs:
       - targets: ["fastapi:8000"]
+        labels:
+          service: "pm25-api"
+          environment: "development"
+
+  # Prometheus itself
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+        labels:
+          service: "prometheus"
+          environment: "development"
+
+  # Alertmanager
+  - job_name: "alertmanager"
+    static_configs:
+      - targets: ["alertmanager:9093"]
+        labels:
+          service: "alertmanager"
+          environment: "development"
+
+  # Grafana (if metrics enabled)
+  - job_name: "grafana"
+    static_configs:
+      - targets: ["grafana:3000"]
+        labels:
+          service: "grafana"
+          environment: "development"
+
+  # Node exporter (system metrics) - optional
+  - job_name: "node-exporter"
+    static_configs:
+      - targets: ["node-exporter:9100"]
+        labels:
+          service: "node-exporter"
+          environment: "development"
 
 alerting:
   alertmanagers:

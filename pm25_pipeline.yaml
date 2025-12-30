@@ -7,10 +7,6 @@
 #    max_depth: int [Default: 7.0]
 #    n_estimators: int [Default: 300.0]
 #    test_size: float [Default: 0.2]
-# Outputs:
-#    drift-detection-component-metrics_output: system.Metrics
-#    evaluate-model-component-metrics_output: system.Metrics
-#    train-model-component-metrics: system.Metrics
 components:
   comp-data-ingestion-component:
     executorLabel: exec-data-ingestion-component
@@ -136,10 +132,10 @@ deploymentSpec:
         - -c
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
-          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
-          \  python3 -m pip install --quiet --no-warn-script-location 'pandas>=2.0.0'\
-          \ 'numpy<2.0' 'pyarrow' && \"$0\" \"$@\"\n"
+          \ python3 -m pip install --quiet --no-warn-script-location 'pandas>=2.0.0'\
+          \ 'numpy<2.0' 'pyarrow'  &&  python3 -m pip install --quiet --no-warn-script-location\
+          \ 'kfp==2.15.2' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"\
+          3.9\"' && \"$0\" \"$@\"\n"
         - sh
         - -ec
         - 'program_path=$(mktemp -d)
@@ -197,10 +193,10 @@ deploymentSpec:
         - -c
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
-          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
-          \  python3 -m pip install --quiet --no-warn-script-location 'pandas>=2.0.0'\
-          \ 'numpy<2.0' 'scikit-learn' && \"$0\" \"$@\"\n"
+          \ python3 -m pip install --quiet --no-warn-script-location 'pandas>=2.0.0'\
+          \ 'numpy<2.0' 'scikit-learn'  &&  python3 -m pip install --quiet --no-warn-script-location\
+          \ 'kfp==2.15.2' '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"\
+          3.9\"' && \"$0\" \"$@\"\n"
         - sh
         - -ec
         - 'program_path=$(mktemp -d)
@@ -274,10 +270,10 @@ deploymentSpec:
         - -c
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
-          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
-          \  python3 -m pip install --quiet --no-warn-script-location 'pandas>=2.0.0'\
-          \ 'numpy<2.0' 'scipy' 'scikit-learn' && \"$0\" \"$@\"\n"
+          \ python3 -m pip install --quiet --no-warn-script-location 'pandas>=2.0.0'\
+          \ 'numpy<2.0' 'scipy' 'scikit-learn'  &&  python3 -m pip install --quiet\
+          \ --no-warn-script-location 'kfp==2.15.2' '--no-deps' 'typing-extensions>=3.7.4,<5;\
+          \ python_version<\"3.9\"' && \"$0\" \"$@\"\n"
         - sh
         - -ec
         - 'program_path=$(mktemp -d)
@@ -346,11 +342,11 @@ deploymentSpec:
         - -c
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
-          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
-          \  python3 -m pip install --quiet --no-warn-script-location 'pandas>=2.0.0'\
-          \ 'numpy<2.0' 'scikit-learn' 'joblib' 'matplotlib' 'seaborn' && \"$0\" \"\
-          $@\"\n"
+          \ python3 -m pip install --quiet --no-warn-script-location 'pandas>=2.0.0'\
+          \ 'numpy<2.0' 'scikit-learn' 'joblib' 'matplotlib' 'seaborn'  &&  python3\
+          \ -m pip install --quiet --no-warn-script-location 'kfp==2.15.2' '--no-deps'\
+          \ 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"' && \"$0\" \"$@\"\
+          \n"
         - sh
         - -ec
         - 'program_path=$(mktemp -d)
@@ -423,10 +419,10 @@ deploymentSpec:
         - -c
         - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
           \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
-          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.7.0'\
-          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
-          \  python3 -m pip install --quiet --no-warn-script-location 'pandas>=2.0.0'\
-          \ 'numpy<2.0' 'scikit-learn' 'xgboost' 'joblib' && \"$0\" \"$@\"\n"
+          \ python3 -m pip install --quiet --no-warn-script-location 'pandas>=2.0.0'\
+          \ 'numpy<2.0' 'scikit-learn' 'xgboost' 'joblib'  &&  python3 -m pip install\
+          \ --quiet --no-warn-script-location 'kfp==2.15.2' '--no-deps' 'typing-extensions>=3.7.4,<5;\
+          \ python_version<\"3.9\"' && \"$0\" \"$@\"\n"
         - sh
         - -ec
         - 'program_path=$(mktemp -d)
@@ -503,20 +499,6 @@ pipelineInfo:
   name: pm2-5-air-quality-prediction-pipeline
 root:
   dag:
-    outputs:
-      artifacts:
-        drift-detection-component-metrics_output:
-          artifactSelectors:
-          - outputArtifactKey: metrics_output
-            producerSubtask: drift-detection-component
-        evaluate-model-component-metrics_output:
-          artifactSelectors:
-          - outputArtifactKey: metrics_output
-            producerSubtask: evaluate-model-component
-        train-model-component-metrics:
-          artifactSelectors:
-          - outputArtifactKey: metrics
-            producerSubtask: train-model-component
     tasks:
       data-ingestion-component:
         cachingOptions:
@@ -634,19 +616,5 @@ root:
         defaultValue: 0.2
         isOptional: true
         parameterType: NUMBER_DOUBLE
-  outputDefinitions:
-    artifacts:
-      drift-detection-component-metrics_output:
-        artifactType:
-          schemaTitle: system.Metrics
-          schemaVersion: 0.0.1
-      evaluate-model-component-metrics_output:
-        artifactType:
-          schemaTitle: system.Metrics
-          schemaVersion: 0.0.1
-      train-model-component-metrics:
-        artifactType:
-          schemaTitle: system.Metrics
-          schemaVersion: 0.0.1
 schemaVersion: 2.1.0
-sdkVersion: kfp-2.7.0
+sdkVersion: kfp-2.15.2

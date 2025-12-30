@@ -1,8 +1,17 @@
 {
     "protected_attribute": "is_weekend",
-    "dataset_size": 12134002,
+    "dataset_size": 500000,
     "PM25_median_threshold": 45.5,
-    "mean_difference": 0.007536511684952285,
-    "disparate_impact": 1.013304634316174,
-    "statistical_parity_difference": 0.007536511684952285
+    "mean_difference": 0.009027999999999925,
+    "disparate_impact": 1.0159447831523618,
+    "statistical_parity_difference": 0.009027999999999925,
+    "flags": {
+        "disparate_impact_flag": false,
+        "statistical_parity_flag": false,
+        "mean_difference_flag": false
+    },
+    "group_counts": {
+        "privileged_0": 250000,
+        "unprivileged_1": 250000
+    }
 }

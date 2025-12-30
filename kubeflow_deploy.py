@@ -1,8 +1,14 @@
 """
 Deploy and run Kubeflow pipeline
+
+Enhancements:
+- Adds compile-only fallback to generate pipeline YAML without Kubeflow
+- Improves CLI with --compile-only and --compile-path options
 """
 
+import os
 import kfp
+from kfp import compiler
 from datetime import datetime
 from kubeflow_pipeline import pm25_prediction_pipeline
 
@@ -57,6 +63,19 @@ def deploy_pipeline(
             print("\n3️⃣  Skip deployment (pipeline is already validated):")
             print("   - pm25_pipeline.yaml is ready for production")
             print("   - See docs/07_KUBEFLOW_ORCHESTRATION.md for details")
+
+            # Compile the pipeline as a fallback for local use
+            try:
+                default_path = os.path.join(os.getcwd(), "pm25_pipeline.yaml")
+                print("\n🛠️  Compiling pipeline to YAML (local fallback)...")
+                compiler.Compiler().compile(
+                    pipeline_func=pm25_prediction_pipeline,
+                    package_path=default_path,
+                )
+                print(f"✅ Compiled pipeline saved to: {default_path}")
+                print("   You can upload this YAML via the Kubeflow UI later.")
+            except Exception as ce:
+                print(f"⚠️  Failed to compile pipeline: {ce}")
             print("\n" + "="*80)
             return None
         else:
@@ -184,6 +203,59 @@ def list_pipeline_runs(
         return None
 
 
+def upload_compiled_pipeline(
+    kubeflow_host: str = "http://localhost:8080",
+    package_path: str = "pm25_pipeline.yaml",
+    pipeline_name: str = "pm25-airquality-pipeline",
+):
+    """Upload a compiled pipeline YAML to Kubeflow Pipelines."""
+
+    print("\n" + "=" * 80)
+    print("📤 UPLOAD COMPILED PIPELINE")
+    print("=" * 80)
+    print(f"🔗 Host: {kubeflow_host}")
+    print(f"📦 Package: {package_path}")
+    print(f"🏷️  Name: {pipeline_name}")
+
+    if not os.path.exists(package_path):
+        print(f"\n❌ Package file not found: {package_path}")
+        print("   Compile it first using --compile-only or check the path.")
+        return None
+
+    try:
+        client = kfp.Client(host=kubeflow_host)
+
+        # Prefer high-level upload if available
+        try:
+            result = client.upload_pipeline(
+                pipeline_package_path=package_path,
+                pipeline_name=pipeline_name,
+            )
+            pipeline_id = getattr(result, "id", None) or getattr(result, "pipeline", {}).get("id")
+        except Exception as ue:
+            print(f"⚠️  client.upload_pipeline failed ({ue}). Trying lower-level API…")
+            uploads_api = client.pipeline_uploads
+            result = uploads_api.upload_pipeline(
+                pipeline_name=pipeline_name,
+                pipeline_file=package_path,
+            )
+            pipeline_id = getattr(result, "id", None)
+
+        print("\n✅ Pipeline uploaded successfully!")
+        if pipeline_id:
+            print(f"   Pipeline ID: {pipeline_id}")
+            print("\n🔗 Dashboard:")
+            print(f"   {kubeflow_host}/#/pipelines/details/{pipeline_id}")
+        else:
+            print("   (Pipeline ID not available from client response)")
+
+        return result
+    except Exception as e:
+        print(f"\n❌ Failed to upload pipeline: {e}")
+        print("   Ensure Kubeflow Pipelines is reachable at the host URL.")
+        return None
+
+
 if __name__ == "__main__":
     import argparse
     
@@ -213,19 +285,65 @@ if __name__ == "__main__":
         action="store_true",
         help="List all pipeline runs"
     )
+    parser.add_argument(
+        "--upload",
+        action="store_true",
+        help="Upload a compiled pipeline YAML to Kubeflow"
+    )
+    parser.add_argument(
+        "--package-path",
+        type=str,
+        default="pm25_pipeline.yaml",
+        help="Path to the compiled pipeline YAML to upload"
+    )
+    parser.add_argument(
+        "--pipeline-name",
+        type=str,
+        default="pm25-airquality-pipeline",
+        help="Name to register the pipeline as in Kubeflow"
+    )
+    parser.add_argument(
+        "--compile-only",
+        action="store_true",
+        help="Compile the pipeline to YAML and exit"
+    )
+    parser.add_argument(
+        "--compile-path",
+        default="pm25_pipeline.yaml",
+        help="Output path for compiled pipeline YAML"
+    )
     
     args = parser.parse_args()
     
     if args.list:
         list_pipeline_runs(args.host, args.experiment)
+    elif args.compile_only:
+        # Compile to YAML and exit
+        print("\n🛠️  Compiling pipeline to YAML...")
+        try:
+            compiler.Compiler().compile(
+                pipeline_func=pm25_prediction_pipeline,
+                package_path=args.compile_path,
+            )
+            print(f"✅ Pipeline compiled to: {args.compile_path}")
+            print("   Upload via Kubeflow UI when available.")
+        except Exception as e:
+            print(f"❌ Failed to compile pipeline: {e}")
+    elif args.upload:
+        # Upload compiled YAML
+        upload_compiled_pipeline(
+            kubeflow_host=args.host,
+            package_path=getattr(args, "package_path", args.compile_path),
+            pipeline_name=getattr(args, "pipeline_name", "pm25-airquality-pipeline"),
+        )
     else:
-            # Check if using localhost - suggest port-forwarding if needed
-            if "localhost" in args.host or "127.0.0.1" in args.host:
-                print(f"\n💡 TIP: If connection fails, set up port-forwarding:")
-                print(f"   kubectl port-forward -n kubeflow svc/ml-pipeline 8080:8888")
-                print(f"   Then use: --host http://localhost:8080\n")
-        
-    run = deploy_pipeline(args.host, args.experiment, args.run_name)
-        
-    if args.wait and run:
-        wait_for_run(run.run_id, args.host)
+        # Check if using localhost - suggest port-forwarding if needed
+        if "localhost" in args.host or "127.0.0.1" in args.host:
+            print(f"\n💡 TIP: If connection fails, set up port-forwarding:")
+            print(f"   kubectl port-forward -n kubeflow svc/ml-pipeline 8080:8888")
+            print(f"   Then use: --host http://localhost:8080\n")
+
+        run = deploy_pipeline(args.host, args.experiment, args.run_name)
+
+        if args.wait and run:
+            wait_for_run(run.run_id, args.host)

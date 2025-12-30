@@ -11,10 +11,15 @@ import xgboost as xgb
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 
-def load_data(data_path="data/master_airquality_clean.csv"):
-    """Load and prepare data."""
+def load_data(data_path="data/master_airquality_clean.csv", sample_size=500_000, random_state=42):
+    """Load and prepare data with optional downsampling to avoid OOM."""
     print("📥 Loading dataset...")
     df = pd.read_csv(data_path, low_memory=False)
+
+    # Downsample if extremely large to keep CV feasible
+    if sample_size and len(df) > sample_size:
+        df = df.sample(n=sample_size, random_state=random_state)
+        print(f"⚡ Downsampled to {len(df)} rows for faster tuning")
     
     df["Timestamp"] = pd.to_datetime(df["Timestamp"], errors="coerce")
     df.dropna(subset=["Timestamp"], inplace=True)
@@ -55,24 +60,25 @@ def create_splits(df, features):
 
 
 def tune_random_forest(X_train, y_train, X_val, y_val):
-    """Tune Random Forest hyperparameters."""
+    """Tune Random Forest hyperparameters with a lean search space to reduce memory/time."""
     print("\n" + "="*60)
     print("TUNING RANDOM FOREST")
     print("="*60)
     
     param_grid = {
-        'n_estimators': [100, 200, 300],
-        'max_depth': [10, 20, 30, None],
-        'min_samples_split': [2, 5, 10],
-        'min_samples_leaf': [1, 2, 4],
-        'max_features': ['sqrt', 'log2']
+        'n_estimators': [75, 125, 175],
+        'max_depth': [10, 16, 24],
+        'min_samples_split': [2, 5],
+        'min_samples_leaf': [1, 2],
+        'max_features': ['sqrt'],
+        'max_samples': [0.5, 0.7]
     }
     
     rf = RandomForestRegressor(random_state=42, n_jobs=-1)
     
     # Use RandomizedSearchCV for faster search
     random_search = RandomizedSearchCV(
-        rf, param_grid, n_iter=20, cv=3, 
+        rf, param_grid, n_iter=10, cv=2, 
         scoring='neg_mean_squared_error',
         random_state=42, verbose=2, n_jobs=-1
     )
@@ -91,18 +97,18 @@ def tune_random_forest(X_train, y_train, X_val, y_val):
 
 
 def tune_xgboost(X_train, y_train, X_val, y_val):
-    """Tune XGBoost hyperparameters."""
+    """Tune XGBoost hyperparameters with constrained search for speed."""
     print("\n" + "="*60)
     print("TUNING XGBOOST")
     print("="*60)
     
     param_grid = {
-        'n_estimators': [100, 200, 300, 500],
-        'learning_rate': [0.01, 0.05, 0.1],
-        'max_depth': [3, 5, 7, 9],
-        'subsample': [0.8, 0.9, 1.0],
-        'colsample_bytree': [0.8, 0.9, 1.0],
-        'min_child_weight': [1, 3, 5]
+        'n_estimators': [120, 200, 260],
+        'learning_rate': [0.03, 0.05, 0.08],
+        'max_depth': [4, 6, 8],
+        'subsample': [0.8, 0.9],
+        'colsample_bytree': [0.8, 0.9],
+        'min_child_weight': [1, 3]
     }
     
     xgb_model = xgb.XGBRegressor(
@@ -113,7 +119,7 @@ def tune_xgboost(X_train, y_train, X_val, y_val):
     
     # Use RandomizedSearchCV
     random_search = RandomizedSearchCV(
-        xgb_model, param_grid, n_iter=30, cv=3,
+        xgb_model, param_grid, n_iter=12, cv=2,
         scoring='neg_mean_squared_error',
         random_state=42, verbose=2, n_jobs=-1
     )
@@ -151,12 +157,17 @@ def evaluate_final_model(model, X_test, y_test):
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Hyperparameter tuning for PM2.5 models")
+    parser.add_argument("--sample-size", type=int, default=500_000, help="Rows to sample for tuning (set None for full dataset)")
+    args = parser.parse_args()
+
     print("="*70)
     print(" "*20 + "HYPERPARAMETER TUNING")
     print("="*70)
     
-    # Load data
-    df, features = load_data()
+    # Load data (downsample to avoid OOM during CV)
+    df, features = load_data(sample_size=args.sample_size)
     X_train, X_val, X_test, y_train, y_val, y_test = create_splits(df, features)
     
     print(f"\n📊 Dataset splits:")

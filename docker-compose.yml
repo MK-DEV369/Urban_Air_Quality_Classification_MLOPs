@@ -10,6 +10,8 @@ services:
       - prometheus
     networks:
       - monitoring
+    environment:
+      - PROMETHEUS_MULTIPROC_DIR=/tmp
 
   prometheus:
     image: prom/prometheus:latest
@@ -19,6 +21,12 @@ services:
       - ./prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml
     ports:
       - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
     networks:
       - monitoring
 
@@ -26,7 +34,7 @@ services:
     image: prom/alertmanager:latest
     container_name: alertmanager
     volumes:
-      - ./prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - ./prometheus/alertmanager_config.yml:/etc/alertmanager/alertmanager.yml
     ports:
       - "9093:9093"
     networks:
@@ -42,6 +50,18 @@ services:
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_METRICS_ENABLED=true
+    networks:
+      - monitoring
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node_exporter
+    ports:
+      - "9100:9100"
     networks:
       - monitoring
 
